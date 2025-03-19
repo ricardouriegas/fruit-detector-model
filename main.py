@@ -12,7 +12,7 @@ from pathlib import Path
 # =============================================================================
 from roboflow import Roboflow
 
-rf = Roboflow(api_key="clave_de_api")
+rf = Roboflow(api_key="key")
 project = rf.workspace("littlefruitproject").project("little-fruit")
 version = project.version(3)
 dataset = version.download("yolov8")  # Descarga el dataset en formato YOLOv8
@@ -98,12 +98,12 @@ print("Archivo data.yaml actualizado.")
 # =============================================================================
 from ultralytics import YOLO
 
-# Cargar modelo preentrenado (por ejemplo, YOLOv8n)
+# Cargar modelo preentrenado
 model = YOLO("yolov8n.pt")
 
 # Entrenar el modelo (ajusta epochs, imgsz, batch, etc. según tus necesidades) 
 # y almacenar los resultados para acceder a las métricas.
-train_results = model.train(data=str(data_yaml_path), epochs=20, imgsz=640, device="mps")
+train_results = model.train(data=str(data_yaml_path), epochs=40, imgsz=640, device="mps")
 
 # Guardar el mejor modelo (por defecto se guarda en runs/detect/exp/weights/best.pt)
 best_weights_path = Path("runs/detect/exp/weights/best.pt")
@@ -113,6 +113,9 @@ if best_weights_path.exists():
 else:
     print("No se encontró el archivo 'best.pt'. Verifica el directorio de entrenamiento.")
 
+val_results = model.val(data=str(data_yaml_path))
+# print(val_results)
+# exit()
 # =============================================================================
 # 6. Detección en tiempo real usando la webcam
 # =============================================================================
