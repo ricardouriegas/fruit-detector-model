@@ -6,23 +6,16 @@ import random
 import shutil
 import yaml
 from pathlib import Path
-
-# =============================================================================
-# 1. Descargar el dataset desde Roboflow
-# =============================================================================
 from roboflow import Roboflow
 
-rf = Roboflow(api_key="key")
+rf = Roboflow(api_key="2DfaLwuoO0656xAnYn8j")
 project = rf.workspace("littlefruitproject").project("little-fruit")
 version = project.version(3)
-dataset = version.download("yolov8")  # Descarga el dataset en formato YOLOv8
+dataset = version.download("yolov8") 
 
-# La ruta base del dataset descargado (little-fruit-3)
+# La ruta base del dataset descargando (little-fruit-3)
 dataset_path = Path(dataset.location)
 
-# =============================================================================
-# 2. Ubicar los datos originales y crear las carpetas para la división
-# =============================================================================
 # Los datos originales están en la carpeta 'train'
 orig_images_dir = dataset_path / "train" / "images"
 orig_labels_dir = dataset_path / "train" / "labels"
@@ -40,9 +33,9 @@ for folder in [new_train_images, new_val_images, new_test_images,
                new_train_labels, new_val_labels, new_test_labels]:
     folder.mkdir(parents=True, exist_ok=True)
 
-# =============================================================================
-# 3. Dividir el dataset (80% train, 10% val, 10% test)
-# =============================================================================
+
+# dividir el dataset (80% train, 10% val, 10% test)
+
 all_images = list(orig_images_dir.glob("*.*"))
 n_images = len(all_images)
 print(f"Total de imágenes encontradas: {n_images}")
@@ -72,11 +65,6 @@ move_files(train_imgs, new_train_images, new_train_labels)
 move_files(val_imgs, new_val_images, new_val_labels)
 move_files(test_imgs, new_test_images, new_test_labels)
 
-print("División del dataset completada.")
-
-# =============================================================================
-# 4. Actualizar el archivo data.yaml
-# =============================================================================
 # Cargar el archivo data.yaml original y actualizar las rutas para cada split
 data_yaml_path = dataset_path / "data.yaml"
 with open(data_yaml_path, "r") as f:
@@ -98,11 +86,10 @@ print("Archivo data.yaml actualizado.")
 # =============================================================================
 from ultralytics import YOLO
 
-# Cargar modelo preentrenado
+# modelo preentrenado
 model = YOLO("yolov8n.pt")
 
-# Entrenar el modelo (ajusta epochs, imgsz, batch, etc. según tus necesidades) 
-# y almacenar los resultados para acceder a las métricas.
+# Entrenar el modelo ahora si
 train_results = model.train(data=str(data_yaml_path), epochs=40, imgsz=640, device="mps")
 
 # Guardar el mejor modelo (por defecto se guarda en runs/detect/exp/weights/best.pt)
@@ -115,35 +102,3 @@ else:
 
 val_results = model.val(data=str(data_yaml_path))
 # print(val_results)
-# exit()
-# =============================================================================
-# 6. Detección en tiempo real usando la webcam
-# =============================================================================
-import cv2
-
-cap = cv2.VideoCapture(0)
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        break
-
-    # Realiza la detección en el frame actual
-    results = model(frame)
-    for result in results:
-        # Iterar sobre cada detección (se asume que la única clase es "fruto")
-        for box in result.boxes:
-            # Extraer coordenadas [x1, y1, x2, y2] y convertir a enteros
-            coords = box.xyxy[0].cpu().numpy().astype(int)
-            x1, y1, x2, y2 = coords
-            # Dibujar el recuadro verde y la etiqueta "fruto"
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(frame, "fruto", (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
-
-    cv2.imshow("Deteccion de Frutos", frame)
-    
-    # Presionar 'q' para salir
-    if cv2.waitKey(1) & 0xFF == ord("q"):
-        break
-
-cap.release()
-cv2.destroyAllWindows()
